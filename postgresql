@@ -1,0 +1,1908 @@
+# PostgreSQL Commands Reference Guide
+
+This document contains comprehensive PostgreSQL commands and examples for database operations, queries, and advanced features.
+
+---
+
+## Database Connection
+
+### Connect to a Database
+**Syntax:**
+```sql
+psql -h HOST -p PORT -U USERNAME -d DATABASE
+```
+
+**Parameters:**
+- `-h HOST`: Hostname or IP address of the PostgreSQL server
+- `-p PORT`: Port number (default: 5432)
+- `-U USERNAME`: Database username
+- `-d DATABASE`: Database name to connect to
+
+**Simple connection (local database):**
+```sql
+psql -U USERNAME
+```
+
+---
+
+## Database Management
+
+### Create a Database
+**Syntax:** `CREATE DATABASE database_name;`
+
+**Example:**
+```sql
+CREATE DATABASE test;
+```
+
+### Delete a Database
+**Syntax:** `DROP DATABASE database_name;`
+
+**Example:**
+```sql
+DROP DATABASE test;
+```
+
+### Switch to a Database
+**Command:** `\c database_name`
+
+**Example:**
+```
+\c person_db
+```
+*Note: This is a psql meta-command, not a SQL statement*
+
+---
+
+## Table Management
+
+### Create a Table
+**Syntax:**
+```sql
+CREATE TABLE table_name (
+    column1 datatype constraints,
+    column2 datatype constraints,
+    ...
+);
+```
+
+**Example: Create table named person**
+```sql
+CREATE TABLE person(
+    id INT,
+    name VARCHAR(100),
+    city VARCHAR(100)
+);
+```
+
+### psql Meta-Commands
+**List all tables:**
+```
+\dt
+```
+
+**Describe a specific table:**
+```
+\d person
+```
+
+**List all columns of a table:**
+```
+\d+ person
+```
+
+---
+
+## Data Manipulation
+
+### INSERT - Adding Data into a Table
+**Syntax:**
+```sql
+INSERT INTO table_name (column1, column2, ...)
+VALUES (value1, value2, ...);
+```
+
+**Single row insertion:**
+```sql
+INSERT INTO person(id, name, city)
+VALUES (101, 'Ram', 'Delhi');
+```
+
+**Multiple rows insertion:**
+```sql
+INSERT INTO person(id, name, city)
+VALUES (102, 'Sham', 'Mumbai'),
+       (103, 'Paul', 'Chennai);
+```
+
+**Insert without specifying column names (must provide all values in order):**
+```sql
+INSERT INTO person
+VALUES (104, 'Alex', 'Pune');
+```
+
+### SELECT - Querying Data
+
+**Select all columns from a table (* means all columns):**
+
+**Syntax:**
+```sql
+SELECT * FROM table_name;
+```
+
+**Example:**
+```sql
+SELECT * FROM person;
+```
+
+**Select specific column:**
+
+**Syntax:**
+```sql
+SELECT column_name FROM table_name;
+```
+
+**Example:**
+```sql
+SELECT id FROM person;
+```
+
+**Select multiple columns (use comma separator):**
+
+**Syntax:**
+```sql
+SELECT column1, column2 FROM table_name;
+```
+
+**Example:**
+```sql
+SELECT id, name FROM person;
+```
+
+### UPDATE - Modifying Existing Data
+**Syntax:**
+```sql
+UPDATE table_name
+    SET column1 = value1, column2 = value2, ...
+    WHERE condition;
+```
+
+**Example:**
+```sql
+UPDATE person
+	SET city='Banglore'
+WHERE
+	name='Ram';
+```
+*Note: Always use WHERE clause to avoid updating all rows*
+
+### DELETE - Removing Data from a Table
+**Syntax:**
+```sql
+DELETE FROM table_name
+WHERE condition;
+```
+
+**Example:**
+```sql
+DELETE FROM person
+WHERE id = 101;
+```
+*Warning: Omitting WHERE clause will delete all rows from the table*
+
+---
+
+## Constraints
+
+**Definition:** In PostgreSQL, a constraint is a rule applied to a column or table to enforce data integrity.
+
+### 1. PRIMARY KEY Constraint
+**Definition:** The PRIMARY KEY constraint uniquely identifies each record in a table.
+
+**Rules:**
+- Must contain **UNIQUE** values
+- Cannot contain **NULL** values
+- A table can have only **ONE** primary key
+
+**Syntax:**
+```sql
+CREATE TABLE table_name (
+    column_name datatype PRIMARY KEY,
+    ...
+);
+```
+
+**Example:**
+```sql
+CREATE TABLE customers
+(
+    acc_no INT PRIMARY KEY,
+    name VARCHAR(100)
+);
+```
+
+### 2. NOT NULL Constraint
+**Definition:** Ensures that a column cannot have NULL values.
+
+**Example:**
+```sql
+CREATE TABLE customers
+(
+    id INT NOT NULL,
+    name VARCHAR(100) NOT NULL
+);
+```
+
+### 3. DEFAULT Constraint
+**Definition:** Provides a default value for a column when no value is specified during insertion.
+
+**Example:**
+```sql
+CREATE TABLE customers
+(
+    acc_no INT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    acc_type VARCHAR(50) NOT NULL DEFAULT 'Savings'
+);
+```
+
+### 4. SERIAL Data Type
+**Definition:** An auto-incrementing integer type. Automatically generates sequential numbers for each new row.
+
+**Types:**
+- `SERIAL`: 1 to 2,147,483,647
+- `BIGSERIAL`: 1 to 9,223,372,036,854,775,807
+
+**Example:**
+```sql
+CREATE TABLE employees
+(
+    id SERIAL PRIMARY KEY,
+    firstname VARCHAR(50),
+    lastname VARCHAR(50)
+);
+```
+
+---
+
+## Sample Database Setup
+
+### Create bank_db Database
+```sql
+CREATE DATABASE bank_db;
+```
+
+### Create employees Table with Multiple Constraints
+```sql
+CREATE TABLE employees
+(
+	emp_id SERIAL PRIMARY KEY,
+	fname VARCHAR(50) NOT NULL,
+	lname VARCHAR(50) NOT NULL,
+	email VARCHAR(100) NOT NULL UNIQUE,
+	dept VARCHAR(50),
+	salary DECIMAL(10,2) DEFAULT 30000.00,
+	hire_date DATE NOT NULL DEFAULT CURRENT_DATE
+);
+```
+
+### Insert Sample Data
+```sql
+INSERT INTO employees (emp_id, fname, lname, email, dept, salary, hire_date)
+VALUES (1, 'Raj', 'Sharma', 'raj.sharma@example.com', 'IT', 50000.00, '2020-01-15');
+```
+
+### Query Data
+```sql
+SELECT * FROM employees;
+```
+
+### Fixing SERIAL Sequence Issue
+**Problem:** When manually inserting with emp_id, the sequence gets out of sync.
+
+**Insert without specifying emp_id:**
+```sql
+INSERT INTO employees (fname, lname, email, dept)
+VALUES ('Priya', 'Singh', 'priya.singh@example.com', 'HR');
+```
+
+**Check current sequence value:**
+```sql
+SELECT currval('employees_emp_id_seq');
+```
+
+**Reset sequence value:**
+```sql
+SELECT setval('employees_emp_id_seq', 1);
+```
+
+### Bulk Insert Sample Employee Data
+```sql
+INSERT INTO employees (emp_id, fname, lname, email, dept, salary, hire_date) 
+VALUES
+(1, 'Raj', 'Sharma', 'raj.sharma@example.com', 'IT', 50000.00, '2020-01-15'),
+(2, 'Priya', 'Singh', 'priya.singh@example.com', 'HR', 45000.00, '2019-03-22'),
+(3, 'Arjun', 'Verma', 'arjun.verma@example.com', 'IT', 55000.00, '2021-06-01'),
+(4, 'Suman', 'Patel', 'suman.patel@example.com', 'Finance', 60000.00, '2018-07-30'),
+(5, 'Kavita', 'Rao', 'kavita.rao@example.com', 'HR', 47000.00, '2020-11-10'),
+(6, 'Amit', 'Gupta', 'amit.gupta@example.com', 'Marketing', 52000.00, '2020-09-25'),
+(7, 'Neha', 'Desai', 'neha.desai@example.com', 'IT', 48000.00, '2019-05-18'),
+(8, 'Rahul', 'Kumar', 'rahul.kumar@example.com', 'IT', 53000.00, '2021-02-14'),
+(9, 'Anjali', 'Mehta', 'anjali.mehta@example.com', 'Finance', 61000.00, '2018-12-03'),
+(10, 'Vijay', 'Nair', 'vijay.nair@example.com', 'Marketing', 50000.00, '2020-04-19');
+```
+
+---
+
+## Query Clauses
+
+**Definition:** Clauses are used to add conditions and modify query behavior when retrieving data.
+
+### WHERE Clause
+**Definition:** Filters rows based on specified conditions.
+
+**Syntax:**
+```sql
+SELECT columns FROM table_name WHERE condition;
+```
+
+**Filter by specific value:**
+```sql
+SELECT * FROM employees WHERE emp_id=5;
+```
+
+**Filter by text value:**
+```sql
+SELECT * FROM employees WHERE dept='HR';
+```
+
+### Comparison Operators
+**Available operators:** `=`, `!=`, `<`, `>`, `<=`, `>=`
+
+**Greater than or equal to:**
+```sql
+SELECT * FROM employees WHERE salary >= 50000;
+```
+
+**Less than or equal to:**
+```sql
+SELECT * FROM employees WHERE salary <= 50000;
+```
+
+**Not equal to:**
+```sql
+SELECT * FROM employees WHERE salary != 50000;
+```
+
+### Logical Operators (OR, AND)
+
+**OR Operator:** Returns rows where at least one condition is true.
+```sql
+SELECT * FROM employees WHERE dept='HR' OR dept='Finance';
+```
+
+**AND Operator:** Returns rows where all conditions are true.
+```sql
+SELECT * FROM employees WHERE dept='IT' AND salary > 50000;
+```
+
+```sql
+SELECT * FROM employees WHERE dept='IT' AND salary < 50000;
+```
+
+```sql
+SELECT * FROM employees WHERE dept='IT' AND salary <= 50000;
+```
+
+### IN Operator
+**Definition:** Checks if a value matches any value in a list. Simplifies multiple OR conditions.
+
+**Using multiple OR conditions:**
+```sql
+SELECT * FROM employees WHERE dept='IT' OR dept='HR' OR dept='Finance';
+```
+
+**Using IN operator (cleaner approach):**
+```sql
+SELECT * FROM employees WHERE dept IN ('IT', 'HR', 'Finance');
+```
+
+### NOT IN Operator
+**Definition:** Returns rows where the value does NOT match any value in the list.
+
+```sql
+SELECT * FROM employees WHERE dept NOT IN ('IT', 'HR', 'Finance');
+```
+
+### BETWEEN Operator
+**Definition:** Checks if a value falls within a specified range (inclusive).
+
+**Syntax:**
+```sql
+SELECT columns FROM table_name WHERE column BETWEEN value1 AND value2;
+```
+
+**Example:**
+```sql
+SELECT * FROM employees WHERE salary BETWEEN 50000 AND 60000;
+```
+
+### DISTINCT Clause
+**Definition:** Returns only unique (distinct) values, removing duplicates.
+
+**Without DISTINCT (shows all rows including duplicates):**
+```sql
+SELECT dept FROM employees;
+```
+
+**With DISTINCT (shows only unique values):**
+```sql
+SELECT DISTINCT dept FROM employees;
+```
+
+### ORDER BY Clause
+**Definition:** Sorts the result set in ascending or descending order.
+
+**Syntax:**
+```sql
+SELECT columns FROM table_name ORDER BY column [ASC|DESC];
+```
+
+**Ascending order (default):**
+```sql
+SELECT * FROM employees ORDER BY fname;
+```
+
+**Descending order:**
+```sql
+SELECT * FROM employees ORDER BY fname DESC;
+```
+
+### LIMIT Clause
+**Definition:** Restricts the number of rows returned by the query.
+
+**Syntax:**
+```sql
+SELECT columns FROM table_name LIMIT number;
+```
+
+**Example (return only first 3 rows):**
+```sql
+SELECT * FROM employees LIMIT 3;
+```
+
+### LIKE Operator
+**Definition:** Used for pattern matching in text fields.
+
+**Wildcards:**
+- `%` - Matches zero or more characters
+- `_` - Matches exactly one character
+
+**Syntax:**
+```sql
+SELECT columns FROM table_name WHERE column LIKE 'pattern';
+```
+
+**Starts with 'A':**
+```sql
+SELECT * FROM employees WHERE fname LIKE 'A%';
+```
+
+**Ends with 'a':**
+```sql
+SELECT * FROM employees WHERE fname LIKE '%a';
+```
+
+**Contains 'i' anywhere:**
+```sql
+SELECT * FROM employees WHERE fname LIKE '%i%';
+```
+
+**Exactly two characters:**
+```sql
+SELECT * FROM employees WHERE dept LIKE '__';
+```
+
+**Second character is 'a':**
+```sql
+SELECT * FROM employees WHERE fname LIKE '_a%';
+```
+
+---
+
+## Aggregate Functions
+
+**Definition:** Aggregate functions perform calculations on a set of values and return a single value.
+
+**Available Functions:**
+- `COUNT()` - Counts the number of rows
+- `SUM()` - Calculates the sum of values
+- `AVG()` - Calculates the average of values
+- `MIN()` - Finds the minimum value
+- `MAX()` - Finds the maximum value
+
+### COUNT Function
+**Definition:** Returns the number of rows that match a specified condition.
+
+```sql
+SELECT COUNT(emp_id) FROM employees;
+```
+
+### SUM Function
+**Definition:** Returns the total sum of a numeric column.
+
+```sql
+SELECT SUM(salary) FROM employees;
+```
+
+### AVG Function
+**Definition:** Returns the average value of a numeric column.
+
+```sql
+SELECT AVG(salary) FROM employees;
+```
+
+### MIN Function
+**Definition:** Returns the smallest value in a column.
+
+```sql
+SELECT MIN(salary) FROM employees;
+```
+
+### MAX Function
+**Definition:** Returns the largest value in a column.
+
+```sql
+SELECT MAX(salary) FROM employees;
+```
+
+---
+
+## GROUP BY Clause
+
+**Definition:** Groups rows that have the same values in specified columns into summary rows. Often used with aggregate functions.
+
+**Syntax:**
+```sql
+SELECT column1, AGGREGATE_FUNCTION(column2)
+FROM table_name
+GROUP BY column1;
+```
+
+### Group by department:
+```sql
+SELECT dept FROM employees GROUP BY dept;
+```
+
+### Count employees per department:
+```sql
+SELECT dept, COUNT(emp_id) FROM employees GROUP BY dept;
+```
+
+### Sum of salaries per department:
+```sql
+SELECT dept, SUM(salary) FROM employees GROUP BY dept;
+```
+
+### Maximum salary per department:
+```sql
+SELECT dept, MAX(salary) FROM employees GROUP BY dept;
+```
+
+### Average salary per department:
+```sql
+SELECT dept, AVG(salary) FROM employees GROUP BY dept;
+```
+
+---
+
+## String Functions
+
+**Definition:** String functions are used to manipulate and transform text data.
+
+**Available Functions:**
+- `CONCAT`, `CONCAT_WS` - Concatenate strings
+- `SUBSTR` / `SUBSTRING` - Extract substring
+- `LEFT`, `RIGHT` - Extract from left or right
+- `LENGTH` - Get string length
+- `UPPER`, `LOWER` - Change case
+- `TRIM`, `LTRIM`, `RTRIM` - Remove whitespace
+- `REPLACE` - Replace substring
+- `POSITION` - Find substring position
+- `REVERSE` - Reverse string
+
+### CONCAT Function
+**Definition:** Concatenates (joins) two or more strings together.
+
+**Syntax:**
+```sql
+CONCAT(string1, string2, ...)
+```
+
+**Basic concatenation:**
+```sql
+SELECT CONCAT('Hello', 'World');
+```
+
+**Concatenate columns:**
+```sql
+SELECT CONCAT(fname, lname) FROM employees;
+```
+
+**Concatenate with space:**
+```sql
+SELECT CONCAT(fname,' ', lname) FROM employees;
+```
+
+**Using alias (AS keyword):**
+```sql
+SELECT CONCAT(fname, lname) AS fullname FROM employees;
+```
+
+**Multiple columns with alias:**
+```sql
+SELECT emp_id, CONCAT(fname, lname) AS fullname, dept FROM employees;
+```
+
+### CONCAT_WS Function
+**Definition:** Concatenate With Separator - joins strings with a specified separator.
+
+**Syntax:**
+```sql
+CONCAT_WS(separator, string1, string2, ...)
+```
+
+**Example with colon separator:**
+```sql
+SELECT CONCAT_WS(':', 'one', 'two', 'three');
+```
+
+**Concatenate names with space:**
+```sql
+SELECT CONCAT_WS(' ', fname, lname) AS fullname FROM employees;
+```
+
+### SUBSTRING / SUBSTR Function
+**Definition:** Extracts a substring from a string starting at a specified position.
+
+**Syntax:**
+```sql
+SUBSTR(string, start_position, length)
+SUBSTRING(string, start_position, length)
+```
+
+**Extract first 5 characters:**
+```sql
+SELECT SUBSTR('Hello Buddy', 1, 5);
+```
+
+**Extract from position 7 onwards:**
+```sql
+SELECT SUBSTRING('Hello Buddy', 7, 11);
+```
+
+### REPLACE Function
+**Definition:** Replaces all occurrences of a substring with another substring.
+
+**Syntax:**
+```sql
+REPLACE(string, from_substring, to_substring)
+```
+
+**Example:**
+```sql
+SELECT REPLACE('ABCXYZ', 'ABC', 'PQR');
+```
+
+**Replace in text:**
+```sql
+SELECT REPLACE('Hey Buddy', 'Hey', 'Hello');
+```
+
+**Replace in table column:**
+```sql
+SELECT REPLACE(dept, 'IT', 'TECH') FROM employees;
+```
+
+### REVERSE Function
+**Definition:** Reverses the order of characters in a string.
+
+**Syntax:**
+```sql
+REVERSE(string)
+```
+
+**Example:**
+```sql
+SELECT REVERSE('Hello');
+```
+
+**Reverse column values:**
+```sql
+SELECT REVERSE(fname) FROM employees;
+```
+
+### LENGTH Function
+**Definition:** Returns the number of characters in a string.
+
+**Syntax:**
+```sql
+LENGTH(string)
+```
+
+**Get length of string:**
+```sql
+SELECT LENGTH('Hello');
+```
+
+**Get length of column values:**
+```sql
+SELECT LENGTH(fname) FROM employees;
+```
+
+**Filter by string length:**
+```sql
+SELECT * FROM employees WHERE LENGTH(fname) > 5;
+```
+
+### UPPER and LOWER Functions
+**Definition:** Converts string to uppercase or lowercase.
+
+**UPPER - Convert to uppercase:**
+```sql
+SELECT UPPER(fname) FROM employees;
+```
+
+**LOWER - Convert to lowercase:**
+```sql
+SELECT LOWER(fname) FROM employees;
+```
+
+### LEFT and RIGHT Functions
+**Definition:** Extracts a specified number of characters from the left or right side of a string.
+
+**LEFT - Extract from left:**
+```sql
+SELECT LEFT('Hello World', 5);
+```
+
+**RIGHT - Extract from right:**
+```sql
+SELECT RIGHT('Hello World', 5);
+```
+
+### TRIM Function
+**Definition:** Removes leading and trailing whitespace from a string.
+
+**Syntax:**
+```sql
+TRIM(string)
+```
+
+**Remove whitespace:**
+```sql
+SELECT TRIM(' Alright ');
+```
+
+**Length before trimming:**
+```sql
+SELECT LENGTH('   Alright   ');
+```
+
+**Length after trimming:**
+```sql
+SELECT LENGTH(TRIM('   Alright   '));
+```
+
+### POSITION Function
+**Definition:** Returns the position of a substring within a string.
+
+**Syntax:**
+```sql
+POSITION(substring IN string)
+```
+
+**Example:**
+```sql
+SELECT POSITION('om' IN 'Thomas');
+```
+
+---
+
+## Practice Exercises
+
+### Exercise 1: Complex String Concatenation
+```sql
+SELECT CONCAT_WS(':', emp_id, CONCAT_WS(' ',fname, lname), dept, salary) FROM employees WHERE emp_id=1;
+```
+
+### Exercise 2: Uppercase Department
+```sql
+SELECT CONCAT_WS(':', emp_id, fname, UPPER(dept)) FROM employees WHERE emp_id=4;
+```
+
+### Exercise 3: Department Code with Employee ID
+```sql
+SELECT CONCAT(LEFT(dept, 1), emp_id), fname FROM employees;
+```
+
+### Exercise 4: Display Records Sorted by Salary (High to Low)
+```sql
+SELECT * FROM employees ORDER BY salary DESC;
+```
+
+### Exercise 5: Show Records Where First Name Starts with Letter 'A'
+```sql
+SELECT * FROM employees WHERE fname LIKE 'A%';
+```
+
+### Exercise 6: Show Records Where Last Name Length > 4 Characters
+```sql
+SELECT * FROM employees WHERE LENGTH(lname) > 4;
+```
+
+### Exercise 7: Total Number of Employees in Database
+```sql
+SELECT COUNT(emp_id) FROM employees;
+```
+
+### Exercise 8: Find Number of Employees in Each Department
+```sql
+SELECT dept, COUNT(emp_id) FROM employees GROUP BY dept;
+```
+
+### Exercise 9: Find Lowest and Highest Salary Employees
+
+**Method 1: Using ORDER BY and LIMIT**
+
+*Note: This works only if there is one person with lowest/highest salary*
+
+**Lowest salary:**
+```sql
+SELECT * FROM employees ORDER BY salary LIMIT 1;
+```
+
+**Highest salary:**
+```sql
+SELECT * FROM employees ORDER BY salary DESC LIMIT 1;
+```
+
+**Method 2: Using Subqueries (Better approach)**
+
+*Works even if multiple employees have the same min/max salary*
+
+**Lowest salary:**
+```sql
+SELECT * FROM employees WHERE salary=(SELECT MIN(salary) FROM employees);
+```
+
+**Highest salary:**
+```sql
+SELECT * FROM employees WHERE salary=(SELECT MAX(salary) FROM employees);
+```
+
+### Exercise 10: Find Total Salary in Finance Department
+```sql
+SELECT SUM(salary) FROM employees WHERE dept='Finance';
+```
+
+---
+
+## ALTER TABLE Commands
+
+**Definition:** ALTER TABLE is used to modify the structure of an existing table.
+
+### Add a New Column
+
+**Syntax:**
+```sql
+ALTER TABLE table_name ADD COLUMN column_name data_type;
+```
+
+**Example:**
+```sql
+ALTER TABLE person ADD COLUMN age INT;
+```
+
+### Remove a Column
+
+**Syntax:**
+```sql
+ALTER TABLE table_name DROP COLUMN column_name;
+```
+
+**Example:**
+```sql
+ALTER TABLE person DROP COLUMN age;
+```
+
+### Add Column with Default Value
+```sql
+ALTER TABLE person ADD COLUMN age INT DEFAULT 0;
+```
+
+### Rename a Column
+
+**Syntax:**
+```sql
+ALTER TABLE table_name RENAME COLUMN old_name TO new_name;
+```
+
+**Example:**
+```sql
+ALTER TABLE person RENAME COLUMN name TO fname;
+```
+
+### Rename a Table
+
+**Syntax:**
+```sql
+ALTER TABLE old_table_name RENAME TO new_table_name;
+```
+
+**Example:**
+```sql
+ALTER TABLE person RENAME TO persons;
+```
+
+### Modify Column Data Type
+
+**Syntax:**
+```sql
+ALTER TABLE table_name ALTER COLUMN column_name SET DATA TYPE new_data_type;
+```
+
+**Example:**
+```sql
+ALTER TABLE person ALTER COLUMN fname SET DATA TYPE VARCHAR(150);
+```
+
+### Set Default Value for Column
+```sql
+ALTER TABLE person ALTER COLUMN fname SET DEFAULT 'unknown';
+```
+
+### Set NOT NULL Constraint
+```sql
+ALTER TABLE person ALTER COLUMN fname SET NOT NULL;
+```
+
+### Remove Constraints
+
+**Remove NOT NULL:**
+```sql
+ALTER TABLE person ALTER COLUMN fname DROP NOT NULL;
+```
+
+**Remove DEFAULT:**
+```sql
+ALTER TABLE person ALTER COLUMN fname DROP DEFAULT;
+```
+
+### CHECK Constraint
+
+**Definition:** CHECK constraint ensures that all values in a column satisfy a specific condition.
+
+**Add CHECK constraint:**
+```sql
+ALTER TABLE person ADD COLUMN mob VARCHAR(15) CHECK (LENGTH (mob) >= 10);
+```
+
+**Describe table to see constraints:**
+```
+\d person
+```
+
+**Test constraint (will fail):**
+```sql
+INSERT INTO person(mob) VALUES (123);
+```
+
+**Test constraint (will succeed):**
+```sql
+INSERT INTO person(mob) VALUES (1234567890);
+```
+
+**Drop constraint:**
+```sql
+ALTER TABLE person DROP CONSTRAINT person_mob_check;
+```
+
+### Named Constraints
+
+**Definition:** Giving constraints meaningful names makes them easier to manage.
+
+**Add named CHECK constraint:**
+```sql
+ALTER TABLE person ADD CONSTRAINT mob_no_less_than_10 CHECK (LENGTH(mob) >= 10 );
+```
+
+**Add another named constraint:**
+```sql
+ALTER TABLE person ADD CONSTRAINT mob_not_null CHECK (mob != null);
+```
+
+---
+
+## CASE Expression
+
+**Definition:** CASE expression allows you to add conditional logic to your queries, similar to if-else statements.
+
+**Syntax:**
+```sql
+CASE
+    WHEN condition1 THEN result1
+    WHEN condition2 THEN result2
+    ELSE default_result
+END
+```
+
+### Simple CASE Example
+
+**Two categories (High/Low):**
+```sql
+SELECT fname, salary,
+CASE
+	WHEN salary >= 50000 THEN 'High'
+	ELSE 'Low'
+END AS sal_cat FROM employees;
+```
+
+### Multiple Conditions
+
+**Three categories (High/Mid/Low):**
+```sql
+SELECT fname, salary,
+CASE
+	WHEN salary >= 50000 THEN 'High'
+	WHEN salary >= 40000 AND salary < 50000 THEN 'Mid'
+	ELSE 'Low'
+END AS sal_cat FROM employees;
+```
+
+### CASE with Calculations
+
+**Calculate 10% bonus:**
+```sql
+SELECT fname, salary,
+CASE
+	WHEN salary > 0 THEN ROUND(salary*0.10)
+END AS bonus FROM employees;
+```
+
+### CASE with GROUP BY
+
+**Count employees by salary category:**
+```sql
+SELECT
+CASE
+	WHEN salary >= 50000 THEN 'High'
+	WHEN salary >= 40000 AND salary < 50000 THEN 'Mid'
+	ELSE 'Low'
+END AS bonus, COUNT(emp_id) FROM employees GROUP BY (bonus);
+```
+
+---
+
+## FOREIGN KEY Constraint
+
+**Definition:** A foreign key is a column (or set of columns) in one table that references the primary key of another table. It creates a relationship between the two tables and helps keep your data consistent.
+
+### Create Tables with Foreign Key
+
+**Create parent table (customers):**
+```sql
+CREATE TABLE customers (
+	cust_id SERIAL PRIMARY KEY,
+	cust_name VARCHAR(100) NOT NULL
+);
+```
+
+**Create child table (orders) with foreign key:**
+```sql
+-- Use REFERENCES to point to PRIMARY KEY table
+CREATE TABLE orders (
+	ord_id SERIAL PRIMARY KEY,
+	ord_date DATE NOT NULL,
+	price NUMERIC NOT NULL,
+	cust_id INTEGER NOT NULL,
+	FOREIGN KEY(cust_id) REFERENCES customers(cust_id)
+);
+```
+
+### Insert Data into Related Tables
+
+**Insert customers:**
+```sql
+INSERT INTO customers (cust_name)
+VALUES 
+    ('Raju'), ('Sham'), ('Paul'), ('Alex');
+```
+
+**Insert orders:**
+```sql
+INSERT INTO orders (ord_date, cust_id, price)
+VALUES 
+    ('2024-01-01', 1, 250.00),  
+    ('2024-01-15', 1, 300.00),  
+    ('2024-02-01', 2, 150.00),
+    ('2024-03-01', 3, 450.00),
+    ('2024-04-04', 2, 550.00);
+```
+
+---
+
+## JOIN Operations
+
+**Definition:** A JOIN is used to combine rows from two (or more) tables based on a related column between them, usually a primary key in one table and a foreign key in another.
+
+### Types of JOINs
+
+- **CROSS JOIN** - Cartesian product of two tables
+- **INNER JOIN** - Returns matching rows from both tables
+- **LEFT JOIN** - Returns all rows from left table + matching rows from right
+- **RIGHT JOIN** - Returns all rows from right table + matching rows from left
+
+### CROSS JOIN
+
+**Definition:** Every row from one table is combined with every row from another table (gives all possible combinations).
+
+**Syntax:**
+```sql
+SELECT * FROM table1 CROSS JOIN table2;
+```
+
+**Example:**
+```sql
+SELECT * FROM customers CROSS JOIN orders;
+```
+
+### INNER JOIN (or JOIN)
+
+**Definition:** Returns only the rows where there is a match between the specified columns in both the left (first) and right (second) tables.
+
+**Think of it as:** Intersection of two tables.
+
+**Syntax:**
+```sql
+SELECT columns FROM table1
+INNER JOIN table2 ON table1.column = table2.column;
+```
+
+**Example:**
+```sql
+SELECT * FROM customers INNER JOIN orders ON customers.cust_id=orders.cust_id;
+```
+
+**Using table aliases:**
+```sql
+SELECT * FROM customers c INNER JOIN orders o ON c.cust_id=o.cust_id;
+```
+
+**Output:**
+```
+ cust_id | cust_name | ord_id |  ord_date  | price  | cust_id
+---------+-----------+--------+------------+--------+---------
+       1 | Raju      |      1 | 2024-01-01 | 250.00 |       1
+       1 | Raju      |      2 | 2024-01-15 | 300.00 |       1
+       2 | Sham      |      3 | 2024-02-01 | 150.00 |       2
+       3 | Paul      |      4 | 2024-03-01 | 450.00 |       3
+       2 | Sham      |      5 | 2024-04-04 | 550.00 |       2
+```
+
+### Using GROUP BY with INNER JOIN
+
+**Count orders per customer:**
+```sql
+SELECT cust_name, COUNT(orders.ord_id) FROM customers INNER JOIN orders
+ON customers.cust_id=orders.cust_id GROUP BY cust_name;
+```
+
+**Or (shorter version):**
+```sql
+SELECT cust_name, COUNT(ord_id) FROM customers INNER JOIN orders
+ON customers.cust_id=orders.cust_id GROUP BY cust_name;
+```
+
+**Output:**
+```
+ cust_name | count
+-----------+-------
+ Paul      |     1
+ Sham      |     2
+ Raju      |     2
+```
+
+### LEFT JOIN
+
+**Definition:** Returns all rows from the left table, and matching rows from the right table.
+
+**Think:** "Left table is always included + intersection of two tables."
+
+**Syntax:**
+```sql
+SELECT columns FROM table1
+LEFT JOIN table2 ON table1.column = table2.column;
+```
+
+**Example:**
+```sql
+SELECT * FROM customers LEFT JOIN orders ON customers.cust_id=orders.cust_id;
+```
+
+**Output:**
+```
+ cust_id | cust_name | ord_id |  ord_date  | price  | cust_id
+---------+-----------+--------+------------+--------+---------
+       1 | Raju      |      1 | 2024-01-01 | 250.00 |       1
+       1 | Raju      |      2 | 2024-01-15 | 300.00 |       1
+       2 | Sham      |      3 | 2024-02-01 | 150.00 |       2
+       3 | Paul      |      4 | 2024-03-01 | 450.00 |       3
+       2 | Sham      |      5 | 2024-04-04 | 550.00 |       2
+       4 | Alex      |        |            |        |
+```
+
+*Note: All data from the left table is included + matching right table data. Alex has no orders, so NULL values appear.*
+
+### RIGHT JOIN
+
+**Definition:** Returns all rows from the right table, and matching rows from the left table.
+
+**Example 1:**
+```sql
+SELECT * FROM customers RIGHT JOIN orders ON customers.cust_id=orders.cust_id;
+```
+
+**Output:**
+```
+ cust_id | cust_name | ord_id |  ord_date  | price  | cust_id
+---------+-----------+--------+------------+--------+---------
+       1 | Raju      |      1 | 2024-01-01 | 250.00 |       1
+       1 | Raju      |      2 | 2024-01-15 | 300.00 |       1
+       2 | Sham      |      3 | 2024-02-01 | 150.00 |       2
+       3 | Paul      |      4 | 2024-03-01 | 450.00 |       3
+       2 | Sham      |      5 | 2024-04-04 | 550.00 |       2
+```
+
+**Example 2 (reversed tables):**
+```sql
+SELECT * FROM orders RIGHT JOIN customers ON orders.cust_id=customers.cust_id;
+```
+
+**Output:**
+```
+ ord_id |  ord_date  | price  | cust_id | cust_id | cust_name
+--------+------------+--------+---------+---------+-----------
+      1 | 2024-01-01 | 250.00 |       1 |       1 | Raju
+      2 | 2024-01-15 | 300.00 |       1 |       1 | Raju
+      3 | 2024-02-01 | 150.00 |       2 |       2 | Sham
+      4 | 2024-03-01 | 450.00 |       3 |       3 | Paul
+      5 | 2024-04-04 | 550.00 |       2 |       2 | Sham
+        |            |        |         |       4 | Alex
+```
+
+*Note: All data from the right table is included + matching left table data.*
+
+---
+
+## Many-to-Many Relationship
+
+**Definition:** A many-to-many relationship occurs when multiple records in one table can relate to multiple records in another table. This requires a junction/bridge table.
+
+### Example: Students and Courses
+
+**Create database:**
+```sql
+CREATE DATABASE institute;
+```
+
+**Create courses table:**
+```sql
+CREATE TABLE courses (
+    c_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    fee NUMERIC NOT NULL
+);
+```
+
+**Insert courses:**
+```sql
+INSERT INTO courses (name, fee)
+VALUES
+('Maths', 500.00),
+('Physics', 600.00),
+('Chemistry', 700.00);
+```
+
+**Create students table:**
+```sql
+CREATE TABLE students (
+    s_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+```
+
+**Insert students:**
+```sql
+INSERT INTO Students (name) VALUES
+('Raju'),
+('Sham'),
+('Alex');
+```
+
+**Create enrollment table (junction table):**
+```sql
+CREATE TABLE enrollment (
+    enrollment_id SERIAL PRIMARY KEY,
+    s_id INT NOT NULL,
+    c_id INT NOT NULL,
+    enrollment_date DATE NOT NULL,
+    FOREIGN KEY (s_id) REFERENCES students(s_id),
+    FOREIGN KEY (c_id) REFERENCES courses(c_id)
+);
+```
+
+**Insert enrollment data:**
+```sql
+INSERT INTO enrollment (s_id, c_id, enrollment_date)
+VALUES
+(1, 1, '2024-01-01'), -- Raju enrolled in Mathematics
+(1, 2, '2024-01-15'), -- Raju enrolled in Physics
+(2, 1, '2024-02-01'), -- Sham enrolled in Mathematics
+(2, 3, '2024-02-15'), -- Sham enrolled in Chemistry
+(3, 3, '2024-03-25'); -- Alex enrolled in Chemistry
+```
+
+### Query Many-to-Many Relationship
+
+**Join all three tables:**
+```sql
+SELECT
+	s.name AS student_name,
+	c.name AS course_name,
+	e.enrollment_date,
+	c.fee
+FROM enrollment e
+JOIN students s ON e.s_id=s.s_id
+JOIN courses c ON c.c_id=e.c_id;
+```
+
+**Output:**
+```
+ student_name | course_name | enrollment_date |  fee
+--------------+-------------+-----------------+--------
+ Raju         | Maths       | 2024-01-01      | 500.00
+ Raju         | Physics     | 2024-01-15      | 600.00
+ Sham         | Maths       | 2024-02-01      | 500.00
+ Sham         | Chemistry   | 2024-02-15      | 700.00
+ Alex         | Chemistry   | 2024-03-25      | 700.00
+```
+
+---
+
+## E-STORE Project Example
+
+**Create project database:**
+```sql
+CREATE DATABASE project_db;
+```
+
+### Create customers Table
+```sql
+CREATE TABLE customers (
+    cust_id SERIAL PRIMARY KEY,
+    cust_name VARCHAR(100) NOT NULL
+);
+```
+
+**Insert customers:**
+```sql
+INSERT INTO customers (cust_name)
+VALUES
+    ('Raju'), ('Sham'), ('Paul'), ('Alex');
+```
+
+### Create orders Table
+```sql
+CREATE TABLE orders (
+    ord_id SERIAL PRIMARY KEY,
+    ord_date DATE NOT NULL,
+    cust_id INTEGER NOT NULL,
+    FOREIGN KEY (cust_id) REFERENCES customers(cust_id)
+);
+```
+
+**Insert orders:**
+```sql
+INSERT INTO orders (ord_date, cust_id)
+VALUES
+    ('2024-01-01', 1),  -- Raju first order
+    ('2024-02-01', 2),  -- Sham first order
+    ('2024-03-01', 3),  -- Paul first order
+    ('2024-04-04', 2);  -- Sham second order
+```
+
+### Create products Table
+```sql
+CREATE TABLE products (
+    p_id SERIAL PRIMARY KEY,
+    p_name VARCHAR(100) NOT NULL,
+    price NUMERIC NOT NULL
+);
+```
+
+**Insert products:**
+```sql
+INSERT INTO products (p_name, price)
+VALUES
+    ('Laptop', 55000.00),
+    ('Mouse', 500),
+    ('Keyboard', 800.00),
+    ('Cable', 250.00);
+```
+
+### Create order_items Table
+```sql
+CREATE TABLE order_items (
+    item_id SERIAL PRIMARY KEY,
+    ord_id INTEGER NOT NULL,
+    p_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (ord_id) REFERENCES orders(ord_id),
+    FOREIGN KEY (p_id) REFERENCES products(p_id)
+);
+```
+
+**Insert order items:**
+```sql
+INSERT INTO order_items (ord_id, p_id, quantity)
+VALUES
+    (1, 1, 1),  -- Raju ordered 1 Laptop
+    (1, 4, 2),  -- Raju ordered 2 Cables
+    (2, 1, 1),  -- Sham ordered 1 Laptop
+    (3, 2, 1),  -- Paul ordered 1 Mouse
+    (3, 4, 5),  -- Paul ordered 5 Cables
+    (4, 3, 1);  -- Sham ordered 1 Keyboard
+```
+
+### Complex JOIN Query
+
+**Get complete order details:**
+```sql
+SELECT cust_name, ord_date, p_name, quantity, price, (price*quantity) AS total_price 
+FROM order_items oi
+JOIN products p ON p.p_id=oi.p_id
+JOIN orders o ON o.ord_id=oi.ord_id
+JOIN customers c ON c.cust_id=o.cust_id;
+```
+
+---
+
+## VIEW
+
+**Definition:** A VIEW is a virtual table created from the result of a SQL query. It does not store data itself (usually), it stores the SQL query. When you query a VIEW, the database runs the underlying query and shows the result.
+
+**Benefits:**
+- Simplifies complex queries
+- Provides data security by limiting access
+- Presents data in a specific format
+
+### Create a VIEW
+
+**Syntax:**
+```sql
+CREATE VIEW view_name AS
+SELECT query;
+```
+
+**Example - Create billing_info view:**
+```sql
+CREATE VIEW billing_info AS 
+SELECT cust_name, ord_date, p_name, quantity, price, (price*quantity) AS total_price 
+FROM order_items oi
+JOIN products p ON p.p_id=oi.p_id
+JOIN orders o ON o.ord_id=oi.ord_id
+JOIN customers c ON c.cust_id=o.cust_id;
+```
+
+### Query a VIEW
+
+**Use VIEW like a regular table:**
+```sql
+SELECT * FROM billing_info;
+```
+
+### List All Views
+
+**psql command:**
+```
+\dv
+```
+
+### Use VIEW with Aggregation
+
+**Sum total price by product:**
+```sql
+SELECT p_name, SUM(total_price) FROM billing_info GROUP BY p_name;
+```
+
+---
+
+## HAVING Clause
+
+**Definition:** HAVING is used to filter groups created by GROUP BY. It's like WHERE, but for groups.
+
+**Key Differences:**
+- **WHERE** → filters rows before grouping
+- **GROUP BY** → creates groups
+- **HAVING** → filters groups after grouping
+
+**Why do we need HAVING?**
+
+Because aggregate functions (SUM, COUNT, AVG, etc.) cannot be used in WHERE clause.
+
+**Syntax:**
+```sql
+SELECT columns, AGGREGATE_FUNCTION(column)
+FROM table_name
+GROUP BY columns
+HAVING condition;
+```
+
+**Example - Filter products with total sales > 1500:**
+```sql
+SELECT p_name, SUM(total_price) FROM billing_info 
+GROUP BY p_name
+HAVING SUM(total_price) > 1500;
+```
+
+---
+
+## ROLLUP
+
+**Definition:** ROLLUP is an extension of GROUP BY that adds subtotal and grand total rows to your result set.
+
+**Syntax:**
+```sql
+SELECT columns, AGGREGATE_FUNCTION(column)
+FROM table_name
+GROUP BY ROLLUP (columns);
+```
+
+**Example:**
+```sql
+SELECT p_name, SUM(total_price) FROM billing_info 
+GROUP BY ROLLUP (p_name)
+ORDER BY SUM (total_price);
+```
+
+*Note: ROLLUP creates NULL values for totals*
+
+---
+
+## COALESCE Function
+
+**Definition:** COALESCE returns the first non-NULL value in a list. It's useful for replacing NULL values with meaningful text.
+
+**Syntax:**
+```sql
+COALESCE(value1, value2, ..., default_value)
+```
+
+**Use with ROLLUP to make totals readable:**
+```sql
+SELECT COALESCE(p_name, 'Total'), SUM(total_price) FROM billing_info 
+GROUP BY ROLLUP (p_name)
+ORDER BY SUM (total_price);
+```
+
+---
+
+## Stored Routines
+
+**Definition:** Stored Routines are programs stored inside the database that contain SQL logic and can be executed repeatedly. Instead of sending SQL again and again, you just *call* the procedure.
+
+### Types of Stored Routines
+
+1. **Stored Procedure** - Performs operations (INSERT, UPDATE, DELETE, etc.)
+2. **User Defined Function** - Returns values for use in queries
+
+**Key Differences:**
+- **Procedure** → Does work (actions)
+- **Function** → Returns a value (calculations)
+
+---
+
+## Stored Procedures
+
+**Definition:** A Stored Procedure is a named set of SQL statements and procedural logic that can perform operations such as inserting, updating, deleting, and querying data.
+
+### Switch to bank_db
+```sql
+\c bank_db
+```
+
+**View employees:**
+```sql
+SELECT * FROM employees;
+```
+
+### Manual Update Example
+```sql
+UPDATE employees
+	SET salary=71000
+WHERE emp_id=3;
+```
+
+### Create a Stored Procedure
+
+**Example - Update employee salary:**
+```sql
+CREATE OR REPLACE PROCEDURE update_emp_salary (
+	p_employees_id INT,
+	p_new_salary NUMERIC
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	UPDATE employees
+	SET salary=p_new_salary
+	WHERE emp_id=p_employees_id;
+END;
+$$;
+```
+
+### Call a Stored Procedure
+
+**Syntax:**
+```sql
+CALL procedure_name(parameters);
+```
+
+**Example:**
+```sql
+CALL update_emp_salary(3, 71000);
+```
+
+### Create Procedure to Add Employee
+
+```sql
+CREATE OR REPLACE PROCEDURE add_employee(
+p_fname VARCHAR,
+p_lname VARCHAR,
+p_email VARCHAR,
+p_dept VARCHAR,
+p_salary NUMERIC
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	INSERT INTO employees (fname, lname, email, dept, salary)
+	VALUES (p_fname, p_lname, p_email, p_dept, p_salary);
+END; 
+$$;
+```
+
+**Call the procedure:**
+```sql
+CALL add_employee('Ram', 'Krishna', 'ram.krishna@example.com', 'IT', 38000);
+```
+
+---
+
+## User Defined Functions
+
+**Definition:** Used to perform calculations and return a single value that can be used within SQL queries.
+
+### Example - Find Employee with Maximum Salary in Department
+
+**Using subquery:**
+```sql
+-- Find employee with max salary in HR department
+SELECT emp_id, fname, salary FROM employees
+WHERE dept = 'HR' AND salary = (SELECT MAX(salary) FROM employees WHERE dept='HR');
+```
+
+### Create a User Defined Function
+
+```sql
+CREATE OR REPLACE FUNCTION dept_max_sal_emp(dept_name VARCHAR)
+RETURNS TABLE(emp_id INT, fname VARCHAR, salary NUMERIC) 
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        e.emp_id,  e.fname, e.salary
+    FROM 
+        employees e
+    WHERE 
+        e.dept = dept_name
+        AND e.salary = (
+            SELECT MAX(emp.salary)
+            FROM employees emp
+            WHERE emp.dept = dept_name
+        );
+END;
+
+$$ LANGUAGE plpgsql;
+```
+
+### Call a User Defined Function
+
+**Syntax:**
+```sql
+SELECT * FROM function_name(parameters);
+```
+
+**Examples:**
+```sql
+SELECT * FROM dept_max_sal_emp('HR');
+```
+
+```sql
+SELECT * FROM dept_max_sal_emp('IT');
+```
+
+---
+
+## Window Functions
+
+**Definition:** Window functions (also known as analytic functions) allow you to perform calculations across a set of rows related to the current row, without collapsing the result set like GROUP BY does.
+
+### OVER() Clause
+
+**Running total:**
+```sql
+-- running total
+SELECT fname, salary, SUM(salary) OVER(ORDER BY salary) FROM employees;
+```
+
+**Moving averages:**
+```sql
+-- moving averages
+SELECT fname, salary, AVG(salary) OVER(ORDER BY salary) FROM employees;
+```
+
+### ROW_NUMBER() Function
+
+**Definition:** Assigns a unique sequential number to each row.
+
+**Basic row numbering:**
+```sql
+SELECT ROW_NUMBER() OVER(), fname, salary FROM employees;
+```
+
+**Row numbering with ORDER BY:**
+```sql
+SELECT ROW_NUMBER() OVER(ORDER BY fname), fname, dept, salary FROM employees;
+```
+
+**Row numbering within partitions:**
+```sql
+SELECT ROW_NUMBER() OVER(PARTITION BY dept), fname, dept, salary FROM employees;
+```
+
+### RANK() Function
+
+**Definition:** Assigns a rank to each row. Rows with equal values receive the same rank, with gaps in the sequence.
+
+**Basic ranking:**
+```sql
+SELECT fname, salary, RANK() OVER() FROM employees;
+```
+
+**Rank by salary (descending):**
+```sql
+SELECT fname, salary, RANK() OVER(ORDER BY salary DESC) FROM employees;
+```
+
+### DENSE_RANK() Function
+
+**Definition:** Similar to RANK(), but without gaps in the ranking sequence.
+
+**Example:**
+```sql
+SELECT fname, salary, DENSE_RANK() OVER(ORDER BY salary DESC) FROM employees;
+```
+
+### LAG() Function
+
+**Definition:** Accesses data from a previous row in the result set.
+
+**Example:**
+```sql
+SELECT fname, salary, LAG(salary) OVER() FROM employees;
+```
+
+### LEAD() Function
+
+**Definition:** Accesses data from a subsequent row in the result set.
+
+**Example:**
+```sql
+SELECT fname, salary, LEAD(salary) OVER() FROM employees;
+```
+
+**Calculate salary difference:**
+```sql
+SELECT fname, salary, (salary - LEAD(salary) OVER(ORDER BY salary DESC)) AS sal_diff FROM employees;
+```
+
+---
+
+## CTE (Common Table Expression)
+
+**Definition:** A CTE is a temporary named result set that you can reference within a SELECT, INSERT, UPDATE, or DELETE statement. It makes complex queries more readable.
+
+**Syntax:**
+```sql
+WITH cte_name AS (
+    SELECT query
+)
+SELECT * FROM cte_name;
+```
+
+### Example - Find Employees Above Department Average
+
+**Problem:** Calculate the average salary per department, then find all employees whose salary is above their department's average.
+
+```sql
+WITH avg_sal AS (
+SELECT dept, AVG(salary) AS avg_salary FROM employees 
+GROUP BY dept)
+SELECT emp_id, fname, salary, avg_salary
+FROM employees e JOIN avg_sal a ON a.dept=e.dept
+WHERE salary > avg_salary;
+```
+
+---
+
+## Triggers
+
+**Definition:** Triggers are special procedures in a database that automatically execute predefined actions in response to certain events on a specified table or view.
+
+**Common Events:**
+- BEFORE INSERT, UPDATE, DELETE
+- AFTER INSERT, UPDATE, DELETE
+
+### Example - Prevent Negative Salary
+
+**Test with negative salary:**
+```sql
+CALL update_emp_salary (1, -52000);
+```
+
+### Create Trigger Function
+
+```sql
+-- Trigger function
+CREATE OR REPLACE FUNCTION check_salary()
+RETURNS TRIGGER AS $$
+BEGIN
+	IF NEW.salary < 0 THEN NEW.salary = 0;
+	END IF;
+	RETURN NEW;
+END;
+$$
+LANGUAGE plpgsql;
+```
+
+### Create Trigger
+
+```sql
+-- Create trigger
+CREATE TRIGGER before_update_salary
+BEFORE UPDATE ON employees
+FOR EACH ROW
+EXECUTE FUNCTION check_salary();
+```
+
+### Test the Trigger
+
+```sql
+CALL update_emp_salary (2, -52000);
+```
+
+*Note: The trigger will automatically set salary to 0 if a negative value is provided.*
+
+---
