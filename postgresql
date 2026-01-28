@@ -8,7 +8,7 @@ This document contains comprehensive PostgreSQL commands and examples for databa
 
 ### Connect to a Database
 **Syntax:**
-```sql
+```
 psql -h HOST -p PORT -U USERNAME -d DATABASE
 ```
 
